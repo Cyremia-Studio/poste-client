@@ -22,6 +22,7 @@
 #  Réglages réservés à Cyremia (tests) :
 #    CYREMIA_DOSSIER_CODE=/chemin   autre dossier que ~/code
 #    CYREMIA_DOSSIER_OUTILS=/chemin autre dossier que ~/.local/bin pour gum et gh
+#    CYREMIA_PROJET=nom-du-depot    choisit ce projet sans poser la question
 #    CYREMIA_AUTO=oui               répond « oui » partout, prend le premier projet,
 #                                   n'installe pas et n'ouvre pas l'application Claude
 # =============================================================================
@@ -346,6 +347,8 @@ nombre="$(printf '%s' "$projets" | grep -c . )"
 if [ "$nombre" -eq 0 ]; then
   echec "Aucun projet Cyremia n'est encore relié à votre compte GitHub « $identifiant »." \
         "donnez à Cyremia votre identifiant GitHub ( $identifiant ), attendez son invitation, puis relancez la même ligne."
+elif [ -n "${CYREMIA_PROJET:-}" ] && printf '%s\n' "$projets" | grep -qx "$CYREMIA_PROJET"; then
+  projet="$CYREMIA_PROJET"
 elif [ "$nombre" -eq 1 ] || [ -n "$AUTO" ]; then
   projet="$(printf '%s\n' "$projets" | head -1)"
 else
