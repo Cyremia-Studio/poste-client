@@ -192,6 +192,20 @@ cadre "$COULEUR_ACCENT" \
   "En cas d'interruption, relancez simplement la même ligne."
 question "On commence ?" || { dire "D'accord, rien n'a été modifié. Relancez la ligne quand vous voulez."; exit 0; }
 
+# Vérifications du Mac avant d'installer quoi que ce soit
+version_macos="$(sw_vers -productVersion 2>/dev/null || echo 0)"
+if [ "${version_macos%%.*}" -lt 12 ] 2>/dev/null; then
+  echec "Votre Mac est en macOS $version_macos : c'est trop ancien pour ces outils (il faut macOS 12 ou plus récent)." \
+        "faites la mise à jour (menu Pomme > Réglages Système > Général > Mise à jour de logiciels), puis relancez la même ligne. Si votre Mac ne peut pas être mis à jour, prévenez Cyremia."
+fi
+libre_go="$(df -g "$HOME" 2>/dev/null | awk 'NR==2 {print $4}')"
+if [ -n "$libre_go" ] && [ "$libre_go" -lt 5 ]; then
+  attention "Il ne reste que $libre_go Go d'espace libre. Les outils d'Apple en demandent 2 à 3 : libérez de la place si l'installation échoue."
+fi
+if ! xcode-select -p >/dev/null 2>&1 && ! id -Gn | tr ' ' '\n' | grep -qx admin; then
+  attention "Votre compte n'est pas administrateur de ce Mac : Apple demandera le nom et le mot de passe d'un administrateur pour installer ses outils. Gardez-les sous la main."
+fi
+
 # -----------------------------------------------------------------------------
 #  Étape 2 : Git (outils de développement d'Apple)
 # -----------------------------------------------------------------------------
