@@ -11,19 +11,19 @@
 #    1. installe l'outil d'affichage (gum) ;
 #    2. installe les outils de développement d'Apple (Git) s'ils manquent ;
 #    3. installe GitHub CLI (gh) ;
-#    4. installe Claude Code ;
+#    4. installe l'application Claude (avec Claude Code intégré) ;
 #    5. connecte le compte GitHub du client (par le navigateur) ;
 #    6. accepte les invitations de Cyremia-Studio et récupère son projet dans ~/code ;
-#    7. crée un raccourci sur le Bureau et ouvre Claude Code dans le projet.
+#    7. ouvre l'application Claude et montre comment y choisir le dossier du site.
 #
 #  Il ne crée aucun compte, ne lit et n'écrit aucun mot de passe, et ne touche
-#  qu'aux dossiers ~/code et ~/.local/bin (plus un raccourci sur le Bureau).
+#  qu'aux dossiers ~/code et ~/.local/bin.
 #
 #  Réglages réservés à Cyremia (tests) :
 #    CYREMIA_DOSSIER_CODE=/chemin   autre dossier que ~/code
 #    CYREMIA_DOSSIER_OUTILS=/chemin autre dossier que ~/.local/bin pour gum et gh
 #    CYREMIA_AUTO=oui               répond « oui » partout, prend le premier projet,
-#                                   ne crée pas de raccourci et n'ouvre pas Claude Code
+#                                   n'installe pas et n'ouvre pas l'application Claude
 # =============================================================================
 
 set -u
@@ -180,10 +180,10 @@ cadre "$COULEUR_ACCENT" \
   "en parlant à Claude Code." \
   "" \
   "Ce qui va se passer, en 10 à 20 minutes :" \
-  "  • installation d'outils gratuits (Git, GitHub, Claude Code) ;" \
+  "  • installation d'outils gratuits (Git, GitHub, application Claude) ;" \
   "  • connexion à votre compte GitHub, dans votre navigateur ;" \
   "  • récupération de votre site dans le dossier « code » ;" \
-  "  • ouverture de Claude Code, prêt à travailler." \
+  "  • ouverture de l'application Claude, prête à travailler." \
   "" \
   "Rien n'est supprimé sur votre ordinateur." \
   "Aucun mot de passe ne vous sera demandé ici," \
@@ -241,19 +241,36 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-#  Étape 4 : Claude Code
+#  Étape 4 : l'application Claude
 # -----------------------------------------------------------------------------
 
-etape 4 "Claude Code"
-if command -v claude >/dev/null 2>&1 || [ -x "$HOME/.local/bin/claude" ]; then
-  ok "Claude Code est déjà installé."
+app_claude() { [ -d "/Applications/Claude.app" ] || [ -d "$HOME/Applications/Claude.app" ]; }
+
+etape 4 "l'application Claude"
+if app_claude; then
+  ok "L'application Claude est déjà installée."
+elif [ -n "$AUTO" ]; then
+  attention "Application Claude absente (mode test : on continue)."
 else
-  patienter "Installation de Claude Code (programme officiel d'Anthropic)…" \
-    bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
-  if command -v claude >/dev/null 2>&1 || [ -x "$DOSSIER_OUTILS/claude" ]; then
-    ok "Claude Code est installé."
+  cadre "$COULEUR_ATTENTION" \
+    "Installons l'application Claude, celle où vous parlerez à Claude Code." \
+    "" \
+    "  1. Appuyez sur Entrée : la page de téléchargement s'ouvre." \
+    "  2. Cliquez sur « Download for macOS » (ou « Télécharger »)." \
+    "  3. Ouvrez le fichier téléchargé (en bas de votre navigateur" \
+    "     ou dans le dossier Téléchargements)." \
+    "  4. Glissez l'icône Claude sur le dossier Applications." \
+    "" \
+    "Revenez ici ensuite : le programme reprend tout seul."
+  pause
+  open "https://claude.com/download"
+  patienter "En attente de l'installation de l'application Claude…" \
+    bash -c 'n=0; until [ -d /Applications/Claude.app ] || [ -d "$HOME/Applications/Claude.app" ]; do sleep 3; n=$((n+1)); [ $n -gt 600 ] && exit 1; done'
+  if app_claude; then
+    ok "L'application Claude est installée."
   else
-    echec "Claude Code n'a pas pu être installé." "vérifiez votre connexion Internet, puis relancez la même ligne."
+    echec "L'application Claude n'a pas été trouvée dans le dossier Applications." \
+          "vérifiez que vous avez bien glissé Claude dans Applications, puis relancez la même ligne."
   fi
 fi
 
@@ -370,52 +387,34 @@ if [ -f "$dossier_projet/cyremia.json" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-#  Étape 7 : raccourci et ouverture
+#  Étape 7 : ouvrir le projet dans l'application Claude
 # -----------------------------------------------------------------------------
 
-etape 7 "le raccourci et l'ouverture de Claude Code"
-raccourci="$HOME/Desktop/$nom_projet (Claude Code).command"
-if [ -z "$AUTO" ]; then
-  if [ -f "$raccourci" ]; then
-    ok "Le raccourci existe déjà sur votre Bureau."
-  elif question "Créer un raccourci sur le Bureau pour ouvrir votre site dans Claude Code en un double-clic ?"; then
-    cat > "$raccourci" <<RACCOURCI
-#!/bin/bash
-# Raccourci créé par Cyremia : ouvre « $nom_projet » dans Claude Code.
-export PATH="\$HOME/.local/bin:\$PATH"
-cd "$dossier_projet" || exit 1
-echo "Récupération des dernières modifications…"
-git pull --ff-only --quiet 2>/dev/null || echo "(Mise à jour impossible pour l'instant : Claude Code vous aidera.)"
-exec claude
-RACCOURCI
-    chmod +x "$raccourci" && ok "Raccourci créé sur le Bureau : « $nom_projet (Claude Code) »." \
-      || attention "Le raccourci n'a pas pu être créé (accès au Bureau refusé ?). Ce n'est pas grave."
-  fi
-fi
-
+etape 7 "ouvrir votre site dans l'application Claude"
 lignes_fin=(
   "C'est prêt !"
   ""
-  "Votre site est dans le dossier : code/$projet"
+  "Votre site est sur votre Mac, dans le dossier :"
+  "  code > $projet"
 )
 [ -n "$apercu" ] && lignes_fin+=("Votre aperçu en ligne : $apercu")
 lignes_fin+=(
   ""
-  "Pour travailler sur votre site, plus tard :"
-  "  double-cliquez sur le raccourci de votre Bureau"
-  "  « $nom_projet (Claude Code) »."
+  "Pour travailler sur votre site, dans l'application Claude :"
+  "  1. Ouvrez Claude et connectez-vous à VOTRE compte Claude."
+  "  2. Allez dans l'onglet « Code »."
+  "  3. Choisissez le dossier de votre site :"
+  "     dossier personnel > code > $projet"
+  "  4. Écrivez simplement ce que vous voulez changer."
   ""
-  "À la toute première ouverture, Claude Code vous demande :"
-  "  • de choisir un affichage (prenez celui que vous préférez) ;"
-  "  • de vous connecter à VOTRE compte Claude, dans le navigateur."
-  ""
-  "Ensuite, écrivez simplement ce que vous voulez"
-  "changer sur votre site."
+  "La prochaine fois, votre site apparaîtra dans la liste des"
+  "projets récents de l'onglet Code."
 )
 cadre "$COULEUR_OK" "${lignes_fin[@]}"
 noter "terminé : $dossier_projet"
 
-if [ -z "$AUTO" ] && question "Ouvrir Claude Code maintenant ?"; then
-  cd "$dossier_projet" && exec "$(command -v claude || echo "$HOME/.local/bin/claude")"
+if [ -z "$AUTO" ] && question "Ouvrir l'application Claude et le dossier de votre site maintenant ?"; then
+  open -R "$dossier_projet" 2>/dev/null
+  open -a Claude 2>/dev/null || attention "Ouvrez l'application Claude depuis le dossier Applications."
 fi
 dire "À bientôt ! Vous pouvez fermer cette fenêtre."

@@ -8,8 +8,8 @@
 #    irm https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer.ps1 | iex
 #
 #  Même parcours que la version Mac (installer.sh), en 7 étapes, relançable sans risque :
-#  affichage (gum), Git, GitHub CLI, Claude Code, connexion GitHub, projet dans
-#  %USERPROFILE%\code, raccourci sur le Bureau et ouverture de Claude Code.
+#  affichage (gum), Git, GitHub CLI, application Claude, connexion GitHub, projet dans
+#  %USERPROFILE%\code, puis ouverture de l'application Claude.
 #
 #  Il ne crée aucun compte, ne lit et n'écrit aucun mot de passe.
 #  Compatible Windows PowerShell 5.1 et PowerShell 7.
@@ -140,10 +140,10 @@ Cadre 39 @(
   'en parlant à Claude Code.',
   '',
   'Ce qui va se passer, en 10 à 20 minutes :',
-  "  • installation d'outils gratuits (Git, GitHub, Claude Code) ;",
+  "  • installation d'outils gratuits (Git, GitHub, application Claude) ;",
   '  • connexion à votre compte GitHub, dans votre navigateur ;',
   '  • récupération de votre site dans le dossier « code » ;',
-  '  • ouverture de Claude Code, prêt à travailler.',
+  "  • ouverture de l'application Claude, prête à travailler.",
   '',
   "Rien n'est supprimé sur votre ordinateur.",
   'Windows peut vous demander une autorisation (« Oui »),',
@@ -195,16 +195,43 @@ else {
   if (Existe gh) { Ok "L'outil GitHub est installé." } else { Echec "L'outil GitHub n'a pas pu être installé." 'relancez la même ligne.' }
 }
 
-# --- Étape 4 : Claude Code ---------------------------------------------------
+# --- Étape 4 : l'application Claude -----------------------------------------
 
-Etape 4 'Claude Code'
-$claudeLocal = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
-if ((Existe claude) -or (Test-Path $claudeLocal)) { Ok 'Claude Code est déjà installé.' }
+function App-Claude {
+  $chemins = @((Join-Path $env:LOCALAPPDATA 'AnthropicClaude\claude.exe'),
+               (Join-Path $env:LOCALAPPDATA 'Programs\Claude\Claude.exe'),
+               (Join-Path $env:ProgramFiles 'Claude\Claude.exe'))
+  foreach ($c in $chemins) { if (Test-Path $c) { return $c } }
+  $raccourciMenu = Get-ChildItem -Path (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs') -Recurse -Filter 'Claude*.lnk' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($raccourciMenu) { return $raccourciMenu.FullName }
+  return $null
+}
+
+Etape 4 "l'application Claude"
+if (App-Claude) { Ok "L'application Claude est déjà installée." }
+elseif ($Auto) { Attention 'Application Claude absente (mode test : on continue).' }
 else {
-  [void](Patienter "Installation de Claude Code (programme officiel d'Anthropic)…" 'powershell' @('-NoProfile','-ExecutionPolicy','Bypass','-Command','irm https://claude.ai/install.ps1 | iex'))
-  Rafraichir-Path
-  if ((Existe claude) -or (Test-Path $claudeLocal)) { Ok 'Claude Code est installé.' }
-  else { Echec "Claude Code n'a pas pu être installé." 'vérifiez votre connexion Internet, puis relancez la même ligne.' }
+  if (Existe winget) {
+    [void](Patienter "Installation de l'application Claude…" 'winget' @('install','--id','Anthropic.Claude','-e','--source','winget','--accept-package-agreements','--accept-source-agreements','--silent'))
+  }
+  if (-not (App-Claude)) {
+    Cadre 214 @(
+      "Installons l'application Claude, celle où vous parlerez à Claude Code.",
+      '',
+      '  1. Appuyez sur Entrée : la page de téléchargement s''ouvre.',
+      '  2. Cliquez sur « Download for Windows » (ou « Télécharger »).',
+      '  3. Ouvrez le fichier téléchargé et suivez l''installation.',
+      '',
+      'Revenez ici ensuite : le programme reprend tout seul.'
+    )
+    Pause-Cyremia
+    Start-Process 'https://claude.com/download'
+    Dire "… En attente de l'installation de l'application Claude"
+    $n = 0
+    while (-not (App-Claude) -and $n -lt 600) { Start-Sleep -Seconds 3; $n++ }
+  }
+  if (App-Claude) { Ok "L'application Claude est installée." }
+  else { Echec "L'application Claude n'a pas été trouvée sur cet ordinateur." 'terminez son installation, puis relancez la même ligne.' }
 }
 
 # Rendre les outils disponibles dans les prochaines fenêtres
@@ -313,45 +340,28 @@ if (Test-Path $fichierInfos) {
   try { $infos = Get-Content -Raw -Encoding UTF8 $fichierInfos | ConvertFrom-Json; if ($infos.nom) { $nomProjet = $infos.nom }; $apercu = $infos.apercu } catch { }
 }
 
-# --- Étape 7 : raccourci et ouverture ----------------------------------------
+# --- Étape 7 : ouvrir le projet dans l'application Claude -------------------
 
-Etape 7 "le raccourci et l'ouverture de Claude Code"
-$bureau = [Environment]::GetFolderPath('Desktop')
-$raccourci = Join-Path $bureau "$nomProjet (Claude Code).lnk"
-if (-not $Auto) {
-  if (Test-Path $raccourci) { Ok 'Le raccourci existe déjà sur votre Bureau.' }
-  elseif (Question 'Créer un raccourci sur le Bureau pour ouvrir votre site dans Claude Code en un double-clic ?') {
-    try {
-      $commande = "`$env:Path = '$DossierOutils;' + `$env:Path; Set-Location '$dossierProjet'; Write-Host 'Récupération des dernières modifications…'; git pull --ff-only --quiet; claude"
-      $shell = New-Object -ComObject WScript.Shell
-      $lien = $shell.CreateShortcut($raccourci)
-      $lien.TargetPath = (Get-Command powershell).Source
-      $lien.Arguments = "-NoExit -NoProfile -ExecutionPolicy Bypass -Command `"$commande`""
-      $lien.WorkingDirectory = $dossierProjet
-      $lien.Save()
-      Ok "Raccourci créé sur le Bureau : « $nomProjet (Claude Code) »."
-    } catch { Attention "Le raccourci n'a pas pu être créé. Ce n'est pas grave." }
-  }
-}
-
-$fin = @("C'est prêt !", '', "Votre site est dans le dossier : code\$projet")
+Etape 7 "ouvrir votre site dans l'application Claude"
+$fin = @("C'est prêt !", '', 'Votre site est sur votre ordinateur, dans le dossier :', "  code > $projet")
 if ($apercu) { $fin += "Votre aperçu en ligne : $apercu" }
-$fin += @('', 'Pour travailler sur votre site, plus tard :',
-          '  double-cliquez sur le raccourci de votre Bureau', "  « $nomProjet (Claude Code) ».", '',
-          'À la toute première ouverture, Claude Code vous demande :',
-          '  • de choisir un affichage (prenez celui que vous préférez) ;',
-          '  • de vous connecter à VOTRE compte Claude, dans le navigateur.', '',
-          'Ensuite, écrivez simplement ce que vous voulez', 'changer sur votre site.')
+$fin += @('', "Pour travailler sur votre site, dans l'application Claude :",
+          '  1. Ouvrez Claude et connectez-vous à VOTRE compte Claude.',
+          '  2. Allez dans l''onglet « Code ».',
+          '  3. Choisissez le dossier de votre site :',
+          "     dossier personnel > code > $projet",
+          '  4. Écrivez simplement ce que vous voulez changer.', '',
+          'La prochaine fois, votre site apparaîtra dans la liste des',
+          'projets récents de l''onglet Code.')
 Cadre 42 $fin
 Noter "terminé : $dossierProjet"
 
-if (-not $Auto -and (Question 'Ouvrir Claude Code maintenant ?')) {
-  Set-Location $dossierProjet
-  $exe = if (Existe claude) { 'claude' } else { $claudeLocal }
-  & $exe
-} else {
-  Dire 'À bientôt ! Vous pouvez fermer cette fenêtre.'
+if (-not $Auto -and (Question "Ouvrir l'application Claude et le dossier de votre site maintenant ?")) {
+  Start-Process explorer.exe $dossierProjet
+  $app = App-Claude
+  if ($app) { Start-Process $app } else { Attention "Ouvrez l'application Claude depuis le menu Démarrer." }
 }
+Dire 'À bientôt ! Vous pouvez fermer cette fenêtre.'
 
 } catch {
   if ($_.Exception.Message -ne 'arret-cyremia') {

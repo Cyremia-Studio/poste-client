@@ -1,7 +1,7 @@
 # Préparer votre ordinateur avec Cyremia
 
 Ce programme prépare votre ordinateur pour que vous puissiez faire évoluer votre site
-vous-même, en parlant à Claude Code. Cyremia vous l'a donné : lancez-le une seule fois,
+vous-même, en parlant à Claude Code dans l'application Claude. Cyremia vous l'a donné : lancez-le une seule fois,
 en suivant les instructions à l'écran. Vous pourrez le relancer sans risque si quelque
 chose a été interrompu.
 
@@ -33,11 +33,12 @@ irm https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer
 1. Il installe l'affichage du programme (gum).
 2. Il installe Git, l'outil qui garde l'historique de votre site.
 3. Il installe l'outil GitHub (gh).
-4. Il installe Claude Code, avec le programme officiel d'Anthropic.
+4. Il vous guide pour installer l'application Claude (page officielle d'Anthropic).
 5. Il relie l'ordinateur à votre compte GitHub, dans votre navigateur.
 6. Il accepte l'invitation de Cyremia et récupère votre site dans le dossier `code` de
    votre dossier personnel.
-7. Il crée un raccourci sur votre Bureau et ouvre Claude Code dans votre site.
+7. Il ouvre l'application Claude et vous montre comment y choisir le dossier de votre site
+   (onglet « Code »).
 
 Il ne crée aucun compte à votre place, ne vous demande aucun mot de passe et ne supprime
 rien. Un compte rendu de son déroulement est écrit dans
@@ -56,7 +57,7 @@ rien. Un compte rendu de son déroulement est écrit dans
   { "nom": "Mon site", "apercu": "https://exemple.cyremia.cloud" }
   ```
 
-  `nom` sert au raccourci du Bureau, `apercu` est affiché à la fin. Les deux sont facultatifs.
+  `nom` et `apercu` sont affichés à la fin. Les deux sont facultatifs.
 - **Ce dépôt est public** pour que le client puisse le télécharger avant d'être connecté à
   GitHub. Il ne doit contenir **aucun nom de client, aucune référence d'infrastructure,
   aucun secret**.
@@ -66,7 +67,7 @@ rien. Un compte rendu de son déroulement est écrit dans
   fichier `checksums.txt` de la publication, tester sur un Mac et sur un PC.
 - **Tester sans toucher à son poste** :
   `CYREMIA_AUTO=oui CYREMIA_DOSSIER_CODE=/tmp/essai CYREMIA_DOSSIER_OUTILS=/tmp/outils bash installer.sh`
-  (répond « oui » partout, prend le premier projet, ne crée pas de raccourci, n'ouvre pas
-  Claude Code, ne modifie pas le profil du Terminal).
+  (répond « oui » partout, prend le premier projet, n'installe pas et n'ouvre pas
+  l'application Claude, ne modifie pas le profil du Terminal).
 - Toute modification passe par une branche et une relecture : ce script s'exécute sur les
   postes de tous les clients.
