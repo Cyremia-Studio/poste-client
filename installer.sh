@@ -5,7 +5,7 @@
 #
 #  Pour le client, une seule ligne à copier-coller dans le Terminal :
 #
-#    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer.sh)"
+#    bash -c "$(curl -fsSL poste.cyremia.cloud)"
 #
 #  Ce que fait le script, dans l'ordre (on peut le relancer sans risque) :
 #    1. installe l'outil d'affichage (gum) ;

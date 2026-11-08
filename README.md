@@ -16,7 +16,7 @@ chose a été interrompu.
 2. Copiez cette ligne, collez-la dans le Terminal (Cmd + V), puis appuyez sur Entrée :
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer.sh)"
+bash -c "$(curl -fsSL poste.cyremia.cloud)"
 ```
 
 ## Sur un PC Windows
@@ -25,7 +25,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/Cyremia-Studio/poste-cli
 2. Copiez cette ligne, collez-la (clic droit ou Ctrl + V), puis appuyez sur Entrée :
 
 ```powershell
-irm https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer.ps1 | iex
+irm https://poste.cyremia.cloud/windows | iex
 ```
 
 ## Ce que fait le programme
@@ -58,6 +58,9 @@ rien. Un compte rendu de son déroulement est écrit dans
   ```
 
   `nom` et `apercu` sont affichés à la fin. Les deux sont facultatifs.
+- **Adresse courte** : `poste.cyremia.cloud` (et `/windows`) est une redirection 302 Cloudflare
+  vers les fichiers de ce dépôt (zone `cyremia.cloud`, même principe que `init.cyremia.cloud`).
+  Rien à mettre à jour côté Cloudflare quand les scripts changent.
 - **Ce dépôt est public** pour que le client puisse le télécharger avant d'être connecté à
   GitHub. Il ne doit contenir **aucun nom de client, aucune référence d'infrastructure,
   aucun secret**.

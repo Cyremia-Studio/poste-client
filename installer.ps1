@@ -5,7 +5,7 @@
 #  Pour le client, une seule ligne à copier-coller dans PowerShell
 #  (menu Démarrer, taper « PowerShell », ouvrir « Windows PowerShell ») :
 #
-#    irm https://raw.githubusercontent.com/Cyremia-Studio/poste-client/main/installer.ps1 | iex
+#    irm https://poste.cyremia.cloud/windows | iex
 #
 #  Même parcours que la version Mac (installer.sh), en 7 étapes, relançable sans risque :
 #  affichage (gum), Git, GitHub CLI, application Claude, connexion GitHub, projet dans
